@@ -11,7 +11,9 @@
             <NuxtLink to="/sobre" class="hover:text-amber-400 transition-colors">Sobre Nós</NuxtLink>
             <NuxtLink to="/cultos" class="hover:text-amber-400 transition-colors">Cultos</NuxtLink>
             <NuxtLink to="/pgs" class="hover:text-amber-400 transition-colors">Pequenos Grupos</NuxtLink>
-            <NuxtLink to="/social" class="hover:text-amber-400 transition-colors">Ação Social</NuxtLink>
+            <NuxtLink to="/oracao" class="hover:text-amber-400 transition-colors">Ore Por Mim</NuxtLink>
+            <NuxtLink to="/admin" class="hover:text-amber-400 transition-colors">Admin</NuxtLink>
+            <NuxtLink to="/admin/eventos" class="hover:text-amber-400 transition-colors">Admin Eventos</NuxtLink>
           </nav>
           <NuxtLink to="/sou-novo" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg text-xs font-bold transition-all">
             Sou Novo
