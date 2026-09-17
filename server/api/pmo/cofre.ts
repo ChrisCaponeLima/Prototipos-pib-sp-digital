@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
       })
 
       // Descriptografa as senhas ao retornar para a aplicação
-      const ativosFormatados = ativos.map((ativo) =&gt; ({
+      const ativosFormatados = ativos.map((ativo) => ({
         ...ativo,
         senha: ativo.senhaCriptografada ? decryptText(ativo.senhaCriptografada) : null
       }))
