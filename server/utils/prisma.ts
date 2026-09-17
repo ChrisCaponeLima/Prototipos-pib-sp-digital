@@ -5,4 +5,4 @@ import { PrismaClient } from '@prisma/client'
     
     export const prisma = globalForPrisma.prisma ?? new PrismaClient() 
     
-    if (process.env.NODE\_ENV !== 'production') globalForPrisma.prisma = prisma
+    if (process.env.NODEENV !== 'production') globalForPrisma.prisma = prisma
