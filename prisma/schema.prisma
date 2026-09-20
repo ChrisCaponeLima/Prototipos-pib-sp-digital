@@ -49,6 +49,7 @@ model pmo_usuarios {
   password_hash    String
   funcao           String             @db.VarChar(50)
   created_at       DateTime?          @default(now()) @db.Timestamp(6)
+  login            String             @db.VarChar(20)
   pmo_diario_bordo pmo_diario_bordo[]
   pmo_tarefas      pmo_tarefas[]
 }
