@@ -1,7 +1,6 @@
 export default defineEventHandler(async (event) => {
   const method = getMethod(event)
 
-  // GET: Trazer todas as tarefas organizadas por status
   if (method === 'GET') {
     try {
       const tarefas = await prisma.pmoTarefa.findMany({
@@ -19,7 +18,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // POST: Criar nova tarefa no Backlog
   if (method === 'POST') {
     const body = await readBody(event)
 
@@ -32,9 +30,9 @@ export default defineEventHandler(async (event) => {
         data: {
           titulo: body.titulo,
           descricao: body.descricao || '',
-          fase: body.fase, // ex: 'Fase 1', 'Fase 2'
-          status: body.status || 'a_fazer', // 'a_fazer', 'em_andamento', 'em_validacao', 'concluido'
-          prioridade: body.prioridade || 'media', // 'alta', 'media', 'baixa'
+          fase: body.fase,
+          status: body.status || 'a_fazer',
+          prioridade: body.prioridade || 'media',
           responsavelId: body.responsavelId || null
         }
       })

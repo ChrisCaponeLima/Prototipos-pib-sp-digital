@@ -1,15 +1,14 @@
 export default defineEventHandler(async (event) => {
   const method = getMethod(event)
 
-  // GET: Listar todos os ativos do cofre
+  // GET: Listar todos os ativos e descriptografar senhas
   if (method === 'GET') {
     try {
       const ativos = await prisma.cofreAtivo.findMany({
         orderBy: { categoria: 'asc' }
       })
 
-      // Descriptografa as senhas ao retornar para a aplicação
-      const ativosFormatados = ativos.map((ativo) => ({
+      const ativosFormatados = ativos.map((ativo: any) => ({
         ...ativo,
         senha: ativo.senhaCriptografada ? decryptText(ativo.senhaCriptografada) : null
       }))
@@ -20,7 +19,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // POST: Cadastrar novo ativo com senha criptografada
+  // POST: Cadastrar novo ativo no cofre com senha encriptada
   if (method === 'POST') {
     const body = await readBody(event)
 
