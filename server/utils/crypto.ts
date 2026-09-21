@@ -1,19 +1,28 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
+import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'node:crypto'
 
 const ALGORITHM = 'aes-256-gcm'
-const SECRET_KEY = Buffer.from(
-  (process.env.ENCRYPTION_SECRET || 'pib_sp_digital_secret_key_32_ch').padEnd(32, '0').slice(0, 32)
-)
+
+// Obtém a chave do .env (ou fallback)
+const rawSecret = process.env.ENCRYPTION_SECRET || 'pib_sp_digital_secret_key_32_ch'
+
+// O Hash SHA-256 gera SEMPRE exatamente 32 bytes (256 bits),
+// mesmo que a chave tenha acentos (como 'ç'), seja maior ou menor.
+const SECRET_KEY = createHash('sha256').update(rawSecret).digest()
 
 export function encryptText(text: string): string {
   if (!text) return ''
-  const iv = randomBytes(12)
-  const cipher = createCipheriv(ALGORITHM, SECRET_KEY, iv)
-  let encrypted = cipher.update(text, 'utf8', 'hex')
-  encrypted += cipher.final('hex')
-  const authTag = cipher.getAuthTag().toString('hex')
-  
-  return `${iv.toString('hex')}:${authTag}:${encrypted}`
+  try {
+    const iv = randomBytes(12)
+    const cipher = createCipheriv(ALGORITHM, SECRET_KEY, iv)
+    let encrypted = cipher.update(text, 'utf8', 'hex')
+    encrypted += cipher.final('hex')
+    const authTag = cipher.getAuthTag().toString('hex')
+    
+    return `${iv.toString('hex')}:${authTag}:${encrypted}`
+  } catch (err) {
+    console.error('❌ Erro ao criptografar:', err)
+    return ''
+  }
 }
 
 export function decryptText(cipherText: string): string {
