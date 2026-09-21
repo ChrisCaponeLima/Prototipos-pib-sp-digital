@@ -1,23 +1,35 @@
+// server/api/pmo/tarefas.get.ts
+import { prisma } from '~/server/utils/prisma'
+
 export default defineEventHandler(async (event) => {
   try {
-    // Busca todas as tarefas ordenadas pela data de atualização
-    const tarefas = await prisma.pmoTarefa.findMany({
+    // Busca todas as tarefas ordenadas por updated_at
+    const tarefas = await prisma.pmo_tarefas.findMany({
       include: {
-        responsavel: {
-          select: { nome: true, email: true, funcao: true }
+        pmo_usuarios: {
+          select: { 
+            id: true,
+            nome: true, 
+            email: true 
+          }
         }
       },
-      orderBy: { updatedAt: 'desc' }
+      orderBy: { 
+        updated_at: 'desc' 
+      }
     })
 
     return {
       success: true,
       data: tarefas
     }
-  } catch (error) {
+  } catch (error: any) {
+    console.error('❌ Erro na API /api/pmo/tarefas:', error)
+
     throw createError({
       statusCode: 500,
-      statusMessage: 'Erro ao carregar tarefas do PMO'
+      statusMessage: 'Erro ao carregar tarefas do PMO',
+      data: error.message
     })
   }
 })

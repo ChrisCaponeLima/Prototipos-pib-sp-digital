@@ -27,6 +27,7 @@ model pmo_diario_bordo {
   resumo_decisao String
   autor_id       String?       @db.Uuid
   created_at     DateTime?     @default(now()) @db.Timestamp(6)
+  status         String?       @default("concluido") @db.VarChar(50)
   pmo_usuarios   pmo_usuarios? @relation(fields: [autor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
