@@ -21,6 +21,38 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Captura IP e User-Agent do evento de forma segura no Nuxt 3
+  const headers = getRequestHeaders(event)
+  const ip = (
+    headers['cf-connecting-ip'] ||
+    headers['x-forwarded-for']?.toString().split(',')[0] ||
+    getRequestIP(event) ||
+    '0.0.0.0'
+  ).trim()
+  const userAgent = headers['user-agent'] || null
+
+  // Função interna para salvar o log sem interromper a resposta da API
+  const registrarLog = async (
+    status: 'SUCESSO' | 'FALHA' | 'BLOQUEADO',
+    usuarioId: string | null = null,
+    detalhes: string | null = null
+  ) => {
+    try {
+      await prisma.pmo_logs_login.create({
+        data: {
+          email: loginInput,
+          status,
+          usuario_id: usuarioId,
+          ip,
+          user_agent: userAgent,
+          detalhes
+        }
+      })
+    } catch (err) {
+      console.error('⚠️ Falha ao salvar log de login no banco:', err)
+    }
+  }
+
   try {
     // Busca o usuário pelo campo login ou pelo email
     const usuario = await prisma.pmo_usuarios.findFirst({
@@ -33,6 +65,7 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!usuario) {
+      await registrarLog('FALHA', null, 'Usuário/Login não encontrado.')
       throw createError({
         statusCode: 401,
         statusMessage: 'Credenciais inválidas.'
@@ -44,11 +77,15 @@ export default defineEventHandler(async (event) => {
     const senhaValida = usuario.password_hash === passwordInput
 
     if (!senhaValida) {
+      await registrarLog('FALHA', usuario.id, 'Senha incorreta.')
       throw createError({
         statusCode: 401,
         statusMessage: 'Credenciais inválidas.'
       })
     }
+
+    // Log de Sucesso
+    await registrarLog('SUCESSO', usuario.id, 'Autenticação realizada com sucesso.')
 
     return {
       success: true,
@@ -60,10 +97,15 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (error: any) {
+    // Se for o próprio erro 401/400 criado acima, re-lança para o cliente receber o status correto
+    if (error.statusCode) {
+      throw error
+    }
+
     console.error('❌ Erro no POST /api/pmo/auth/login:', error)
     throw createError({
-      statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || 'Erro ao autenticar usuário.'
+      statusCode: 500,
+      statusMessage: 'Erro ao autenticar usuário.'
     })
   }
 })

@@ -53,5 +53,21 @@ model pmo_usuarios {
   created_at       DateTime?          @default(now()) @db.Timestamp(6)
   login            String             @db.VarChar(20)
   pmo_diario_bordo pmo_diario_bordo[]
+  pmo_logs_login   pmo_logs_login[]
   pmo_tarefas      pmo_tarefas[]
+}
+
+model pmo_logs_login {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuario_id   String?       @db.Uuid
+  email        String        @db.VarChar(255)
+  status       String        @db.VarChar(20)
+  ip           String?       @db.VarChar(45)
+  user_agent   String?
+  detalhes     String?
+  created_at   DateTime?     @default(now()) @db.Timestamp(6)
+  pmo_usuarios pmo_usuarios? @relation(fields: [usuario_id], references: [id], onUpdate: NoAction)
+
+  @@index([email], map: "idx_pmo_logs_login_email")
+  @@index([usuario_id], map: "idx_pmo_logs_login_usuario_id")
 }
