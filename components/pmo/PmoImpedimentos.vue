@@ -9,8 +9,11 @@
         <span class="px-2 py-0.5 bg-red-500 text-white font-extrabold text-[10px] rounded uppercase tracking-wider animate-pulse">
           Gargalos Críticos
         </span>
-        <h3 class="text-sm font-bold text-red-200">
+        <h3 class="text-sm font-bold text-red-200 flex items-center gap-2">
           Central de Impedimentos & Bloqueadores Externos
+          <span v-if="impedimentos.length > 0" class="text-xs bg-red-500/20 text-red-300 border border-red-500/40 px-2 py-0.5 rounded-full">
+            {{ impedimentos.length }}
+          </span>
         </h3>
       </div>
 
@@ -33,29 +36,44 @@
       </div>
     </div>
 
-    <!-- Lista de Cards (Ocultável) -->
+    <!-- Lista de Cards Reativa a partir das Tarefas com Impeditivo -->
     <transition name="fade-slide">
-      <div v-show="!isCollapsed" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-        <!-- BLOQUEADOR 1 -->
-        <div class="bg-slate-900/90 border border-red-500/40 rounded-xl p-3 flex justify-between items-center shadow-sm">
-          <div>
-            <p class="text-xs font-semibold text-white">Aguardando liberação do Bearer Token na API Prover</p>
-            <p class="text-[11px] text-slate-400">Pendente envio do token de produção pela equipe de suporte da Prover.</p>
-          </div>
-          <span class="px-2.5 py-1 bg-red-500/20 text-red-300 text-[10px] font-bold rounded border border-red-500/30 shrink-0 ml-2">
-            TI / Prover
-          </span>
+      <div v-show="!isCollapsed" class="pt-1">
+        <!-- Estado de Carregamento -->
+        <div v-if="pending" class="text-center py-4 text-xs text-red-300/60">
+          ⏳ Carregando impedimentos...
         </div>
 
-        <!-- BLOQUEADOR 2 -->
-        <div class="bg-slate-900/90 border border-red-500/40 rounded-xl p-3 flex justify-between items-center shadow-sm">
-          <div>
-            <p class="text-xs font-semibold text-white">Recuperação de Acesso Máster no Registro.br</p>
-            <p class="text-[11px] text-slate-400">Aguardando validação do e-mail institucional pela secretaria.</p>
+        <!-- Lista Vazia (Sem Impeditivos) -->
+        <div v-else-if="impedimentos.length === 0" class="text-center py-4 text-xs text-slate-400 border border-dashed border-red-500/20 rounded-xl">
+          Nenhum bloqueador ou impeditivo crítico registrado no momento.
+        </div>
+
+        <!-- Grid de Cards com Impeditivo -->
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div 
+            v-for="item in impedimentos" 
+            :key="item.id"
+            class="bg-slate-900/90 border border-red-500/40 rounded-xl p-3 flex justify-between items-start shadow-sm gap-2"
+          >
+            <div class="space-y-1 pr-1">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-slate-800 text-amber-400 border border-amber-500/20">
+                  {{ item.fase }}
+                </span>
+                <p class="text-xs font-semibold text-white leading-snug">
+                  {{ item.titulo }}
+                </p>
+              </div>
+              <p v-if="item.descricao" class="text-[11px] text-slate-400 line-clamp-2">
+                {{ item.descricao }}
+              </p>
+            </div>
+
+            <span class="px-2.5 py-1 bg-red-500/20 text-red-300 text-[10px] font-bold rounded border border-red-500/30 shrink-0 ml-2 whitespace-nowrap">
+              👤 {{ item.pmo_usuarios?.nome || 'Sem Responsável' }}
+            </span>
           </div>
-          <span class="px-2.5 py-1 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded border border-amber-500/30 shrink-0 ml-2">
-            Secretaria
-          </span>
         </div>
       </div>
     </transition>
@@ -63,10 +81,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
-// Estado do collapse (inicia aberto).
+interface Usuario {
+  id: string
+  nome: string
+  email?: string
+}
+
+interface Tarefa {
+  id: string
+  titulo: string
+  descricao?: string
+  fase: string
+  status: string
+  prioridade: string
+  responsavel_id?: string
+  Impeditivo?: boolean | null
+  pmo_usuarios?: Usuario | null
+  updated_at?: string
+}
+
+// Estado do collapse (inicia aberto)
 const isCollapsed = ref(false)
+
+// Busca tarefas diretamente da API do PMO
+const { data: responseApi, pending } = await useFetch<{ success: boolean, data: Tarefa[] }>('/api/pmo/tarefas')
+
+// Filtra apenas as tarefas marcadas com Impeditivo === true
+const impedimentos = computed<Tarefa[]>(() => {
+  const lista = responseApi.value?.data || []
+  return lista.filter((t) => Boolean(t.Impeditivo))
+})
 </script>
 
 <style scoped>

@@ -1,36 +1,74 @@
-// server/api/pmo/diario.ts
 import { prisma } from '~/server/utils/prisma'
 
 export default defineEventHandler(async (event) => {
-  try {
-    const apontamentos = await prisma.pmo_diario_bordo.findMany({
-      orderBy: {
-        created_at: 'desc'
-      },
-      include: {
-        pmo_usuarios: {
-          select: {
-            nome: true,
-            email: true
+  const method = getMethod(event)
+
+  // GET: Listar anotações do diário de bordo
+  if (method === 'GET') {
+    try {
+      const apontamentos = await prisma.pmo_diario_bordo.findMany({
+        include: {
+          pmo_usuarios: {
+            select: {
+              id: true,
+              nome: true,
+              funcao: true
+            }
           }
+        },
+        orderBy: {
+          created_at: 'desc'
         }
-      }
-    })
+      })
 
-    return {
-      success: true,
-      data: apontamentos
+      const data = apontamentos.map((item) => ({
+        ...item,
+        nome_usuario: item.pmo_usuarios?.nome || 'Usuário PMO'
+      }))
+
+      return { success: true, data }
+    } catch (error: any) {
+      console.error('❌ Erro no GET /api/pmo/diario:', error)
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Erro ao buscar dados do diário de bordo.'
+      })
     }
-  } catch (error: any) {
-    // 🔍 Imprime o erro REAL completo no terminal do servidor
-    console.error('--- ERRO DETALHADO DO PRISMA ---')
-    console.error(error)
-    console.error('--------------------------------')
+  }
 
-    throw createError({
-      statusCode: 500,
-      statusMessage: error.message || 'Erro ao conectar ao banco de dados',
-      data: error
-    })
+  // POST: Cadastrar novo item no diário de bordo
+  if (method === 'POST') {
+    const body = await readBody(event)
+
+    if (!body.titulo || !body.resumo_decisao) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Título e Resumo/Decisão são obrigatórios.'
+      })
+    }
+
+    try {
+      // Aceita usuario_id ou autor_id do body e grava em autor_id no banco
+      const autorId = body.autor_id || body.usuario_id || null
+
+      const novoItem = await prisma.pmo_diario_bordo.create({
+        data: {
+          titulo: body.titulo.trim(),
+          resumo_decisao: body.resumo_decisao.trim(),
+          status: body.status || 'concluido',
+          autor_id: autorId, // CORRIGIDO: nome correto do campo no schema do Prisma
+          created_at: new Date()
+        }
+      })
+
+      return { success: true, data: novoItem }
+    } catch (error: any) {
+      console.error('❌ Erro no POST /api/pmo/diario:', error)
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Erro ao salvar novo registro no diário de bordo.',
+        message: error.message
+      })
+    }
   }
 })

@@ -24,3 +24,7 @@ logs
 !.env.example
 
 /generated/prisma
+
+# Ignorar pagina sensivel de gestao de usuarios
+pages/pmo/usuarios.vue
+
